@@ -22,13 +22,21 @@ Commands:
 EOF
 }
 
+link_all() {
+  local dst="$1"; shift; mkdir -p "$dst"
+  for src in "$@"; do
+    [[ -e "$src" ]] || continue
+    local t="$dst/$(basename "$src")"
+    rm -rf "$t" && ln -sfn "$src" "$t"
+  done
+}
+
 cmd_global() {
   log_info "Linking global skills, agents, and safe global rules..."
   for dir in "$AGY_GLOBAL_DIR" "$CLAUDE_GLOBAL_DIR"; do
-    mkdir -p "$dir"/{skills,rules,agents}
-    ln -sfn "${KIT_ROOT}/skills/"* "$dir/skills/"
-    ln -sfn "${KIT_ROOT}/rules/global/"*.md "$dir/rules/"
-    ln -sfn "${KIT_ROOT}/agents/"*.md "$dir/agents/"
+    link_all "$dir/skills" "${KIT_ROOT}/skills/"*
+    link_all "$dir/rules"  "${KIT_ROOT}/rules/global/"*.md
+    link_all "$dir/agents" "${KIT_ROOT}/agents/"*.md
     log_ok "Linked global skills, agents & rules in $dir"
   done
 }
@@ -41,9 +49,8 @@ cmd_learn() {
 
   mkdir -p "${target_dir}/.agents/rules" "${target_dir}/.github"
   for dir in "${target_dir}/.agents" "${target_dir}/.claude"; do
-    mkdir -p "$dir"/{skills,agents}
-    ln -sfn "${KIT_ROOT}/skills/craft-"* "$dir/skills/"
-    ln -sfn "${KIT_ROOT}/agents/"*.md "$dir/agents/"
+    link_all "$dir/skills" "${KIT_ROOT}/skills/craft-"*
+    link_all "$dir/agents" "${KIT_ROOT}/agents/"*.md
   done
   for dst in ".agents/rules/learning-mode.md" "CLAUDE.md" ".github/copilot-instructions.md"; do
     ln -sfn "${KIT_ROOT}/rules/profiles/learning-mode.md" "${target_dir}/${dst}"
